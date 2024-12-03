@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error
+import io
 
 # Streamlit configuration
 st.set_page_config(layout="wide", page_title="Sales Prediction Dashboard")
@@ -123,6 +124,17 @@ if uploaded_file:
         color_discrete_sequence=['#FF7043'],
     )
     st.plotly_chart(line_fig, use_container_width=True)
+
+    # Download button for unique Predicted Sales CSV
+    st.write("### Download Predicted Sales Data (Aggregated by Region)")
+    csv_buffer = io.StringIO()
+    sales_by_region.to_csv(csv_buffer, index=False)  # Export grouped data
+    st.download_button(
+        label="Download Predicted Sales CSV",
+        data=csv_buffer.getvalue(),
+        file_name="predicted_sales_by_region.csv",
+        mime="text/csv",
+    )
 
 else:
     st.info("Please upload a CSV file to start.")
