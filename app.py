@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_squared_error
+import matplotlib.pyplot as plt
 import io
 
 # Streamlit configuration
@@ -66,75 +67,91 @@ if uploaded_file:
     st.write(f"**Random Forest R² Score:** {r2:.4f}")
     st.write(f"**Random Forest RMSE:** {rmse:.2f}")
 
-    # Simulated regions and predicted sales (replace with real data for better visualization)
+
+
+# Simulated data (replace with real data in production)
     regions = ['North America', 'Europe', 'Asia', 'South America', 'Africa'] * 600
+    actual_sales = [128.45, 4339.20, 764.80, 1800.00, 239.94] * 600
     predicted_sales = [133.59, 4241.90, 752.40, 1815.50, 230.00] * 600
-    data_viz = pd.DataFrame({
+
+    # Create DataFrame
+    data = pd.DataFrame({
         'Region': regions[:3000],
+        'Actual_Sales': actual_sales[:3000],
         'Predicted_Sales': predicted_sales[:3000]
     })
 
-    # Bar Chart: Predicted Sales by Region
-    st.write("### Predicted Sales by Region (Bar Chart)")
-    sales_by_region = data_viz.groupby('Region')['Predicted_Sales'].mean().reset_index()
+    # Group data by Region
+    sales_by_region = data.groupby('Region')[['Actual_Sales', 'Predicted_Sales']].mean().reset_index()
+
+    ### Bar Chart: Actual vs Predicted Sales by Region ###
+    st.write("### Bar Chart: Actual vs Predicted Sales by Region")
     bar_fig = px.bar(
         sales_by_region,
         x='Region',
-        y='Predicted_Sales',
-        title='Predicted Sales by Region',
-        labels={'Predicted_Sales': 'Average Predicted Sales'},
-        color='Region',
-        color_discrete_sequence=px.colors.qualitative.Set2,
+        y=['Actual_Sales', 'Predicted_Sales'],
+        title='Actual vs Predicted Sales by Region',
+        barmode='group',
+        labels={'value': 'Average Sales', 'variable': 'Sales Type'},
+        color_discrete_sequence=px.colors.qualitative.Set1
     )
     st.plotly_chart(bar_fig, use_container_width=True)
 
-    # Histogram: Predicted Sales
-    st.write("### Histogram of Predicted Sales")
-    hist_fig = px.histogram(
-        data_viz,
-        x='Predicted_Sales',
-        nbins=30,
-        title='Distribution of Predicted Sales',
-        labels={'Predicted_Sales': 'Sales Value'},
-        color_discrete_sequence=['#FFA726'],
-    )
-    st.plotly_chart(hist_fig, use_container_width=True)
+    ### Histogram: Distribution of Actual vs Predicted Sales ###
+    st.write("### Histogram: Distribution of Actual vs Predicted Sales")
 
-    # Scatter Plot: Predicted Sales by Region
-    st.write("### Scatter Plot of Predicted Sales by Region")
+    # Create a smaller Matplotlib figure
+    fig, ax = plt.subplots(figsize=(8, 4))  # Adjusted figure size for a more compact appearance
+
+    # Plot histograms
+    ax.hist(data['Actual_Sales'], bins=30, alpha=0.5, label='Actual Sales', color='blue')
+    ax.hist(data['Predicted_Sales'], bins=30, alpha=0.5, label='Predicted Sales', color='orange')
+
+    # Set labels, title, and legend
+    ax.set_title('Histogram of Actual vs Predicted Sales', fontsize=14)  # Slightly smaller font
+    ax.set_xlabel('Sales Value', fontsize=12)
+    ax.set_ylabel('Frequency', fontsize=12)
+    ax.legend(loc='upper right', fontsize=10)
+
+    # Display the plot in Streamlit
+    st.pyplot(fig)
+
+
+
+    ### Scatter Plot: Actual vs Predicted Sales by Region ###
+    st.write("### Scatter Plot: Actual vs Predicted Sales by Region")
     scatter_fig = px.scatter(
-        data_viz,
-        x='Region',
+        data,
+        x='Actual_Sales',
         y='Predicted_Sales',
-        title='Scatter Plot of Predicted Sales by Region',
         color='Region',
-        labels={'Predicted_Sales': 'Sales Value'},
+        title='Scatter Plot of Actual vs Predicted Sales by Region',
+        labels={'Actual_Sales': 'Actual Sales', 'Predicted_Sales': 'Predicted Sales'},
+        opacity=0.7
     )
     st.plotly_chart(scatter_fig, use_container_width=True)
 
-    # Line Graph: Predicted Sales by Region
-    st.write("### Line Graph of Predicted Sales by Region")
+    ### Line Graph: Actual vs Predicted Sales by Region ###
+    st.write("### Line Graph: Actual vs Predicted Sales by Region")
     line_fig = px.line(
         sales_by_region,
         x='Region',
-        y='Predicted_Sales',
-        title='Trend of Predicted Sales by Region',
-        labels={'Predicted_Sales': 'Average Predicted Sales'},
+        y=['Actual_Sales', 'Predicted_Sales'],
+        title='Actual vs Predicted Sales by Region',
+        labels={'value': 'Average Sales', 'variable': 'Sales Type'},
         markers=True,
-        color_discrete_sequence=['#FF7043'],
+        color_discrete_sequence=['blue', 'orange']
     )
     st.plotly_chart(line_fig, use_container_width=True)
 
-    # Download button for unique Predicted Sales CSV
+    ### Download Aggregated Data as CSV ###
     st.write("### Download Predicted Sales Data (Aggregated by Region)")
     csv_buffer = io.StringIO()
     sales_by_region.to_csv(csv_buffer, index=False)  # Export grouped data
     st.download_button(
-        label="Download Predicted Sales CSV",
+        label="Download Aggregated Sales CSV",
         data=csv_buffer.getvalue(),
-        file_name="predicted_sales_by_region.csv",
+        file_name="aggregated_sales_by_region.csv",
         mime="text/csv",
     )
 
-else:
-    st.info("Please upload a CSV file to start.")
